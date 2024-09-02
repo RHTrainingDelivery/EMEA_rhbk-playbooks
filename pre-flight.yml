@@ -11,7 +11,7 @@
     - role: fix-operators
       tags: fix
 - name: Class DNS changes on bastion.
-  hosts: bastion.lab.example.com
+  hosts: bastion1.example.com
   gather_subset: min
   roles:
     - role: add-hosts

@@ -54,7 +54,7 @@
 - name: We also need python3-jmespath
   become: yes
   package:
-    name: python3-jmespath
+    name: python3.11-jmespath
     state: latest
 
 - name: Verify cluster connectivity

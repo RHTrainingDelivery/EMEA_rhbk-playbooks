@@ -6,7 +6,7 @@ all:
       ansible_connection: local
     utility.lab.example.com:
       ansible_user: lab
-    bastion.lab.example.com:
+    bastion1.example.com:
       ansible_user: root
   vars:
     # OpenShift versions.

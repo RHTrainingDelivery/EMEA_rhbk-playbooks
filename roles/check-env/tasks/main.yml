@@ -18,12 +18,12 @@
     state: file
   loop: "{{ tools.keys() | list }}"
 
-- name: Check for completion files
-  file:
-    path: /etc/bash_completion.d/{{ tools[item].completion_file }}
-    state: file
-  when: tools[item].completion
-  loop: "{{ tools.keys() | list }}"
+#- name: Check for completion files
+#  file:
+#    path: /etc/bash_completion.d/{{ tools[item].completion_file }}
+#    state: file
+#  when: tools[item].completion
+#  loop: "{{ tools.keys() | list }}"
 
 - name: Make sure kubeconfig is there on utility
   delegate_to: utility.lab.example.com
@@ -66,7 +66,7 @@
 # TODO: change zip names
 - name: Check RHBK ZIP is there
   stat:
-    path: "{{ ansible_facts['user_dir'] }}/Downloads/rh-sso-{{ sso_z }}-server-dist.zip"
+    path: "{{ ansible_facts['user_dir'] }}/Downloads/rhbk-{{ rhbk_z }}.zip"
   register: rhbk_zip
   when: need_rhbk_zip|bool
 
@@ -78,14 +78,14 @@
 
 - name: Check RHBK patch is there
   stat:
-    path: "{{ ansible_facts['user_dir'] }}/Downloads/rh-sso-{{ sso_p }}-patch.zip"
+    path: "{{ ansible_facts['user_dir'] }}/Downloads/rhbk-{{ rhbk_p }}-patch.zip"
   register: rhbk_patch
   when: need_rhbk_zip|bool and need_rhbk_patch|bool
 
 - name: Check RHBK hotfix is there
   stat:
-    path: "{{ ansible_facts['user_dir'] }}/Downloads/rhsso-{{ sso_f }}.zip"
-  register: sso_hotfix
+    path: "{{ ansible_facts['user_dir'] }}/Downloads/rhbk-{{ rhbk_f }}.zip"
+  register: rhbk_hotfix
   when: need_rhbk_zip|bool and need_rhbk_hotfix|bool
 
 - assert:
@@ -101,7 +101,7 @@
   when: need_rhbk_zip|bool and need_rhbk_patch|bool
 
 - assert:
-    that: sso_hotfix.stat.exists
+    that: rhbk_hotfix.stat.exists
     fail_msg: "ERROR: RHBK hotfix not downloaded! Please go to section 'Before You Begin' in your book."
     success_msg: "OK: Found RHBK hotfix file."
   when: need_rhbk_zip|bool and need_rhbk_hotfix|bool

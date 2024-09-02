@@ -10,12 +10,12 @@ all:
       ansible_user: root
   vars:
     # OpenShift versions.
-    ocp_maj: "4.10"
-    ocp_z: "4.10.3"
+    ocp_maj: "4.14"
+    ocp_z: "4.14.0"
     # Various RHBK versions.
-    rhbk_z: "7.6.0"
-    rhbk_p: "7.6.1"
-    rhbk_f: "4361"
+    rhbk_z: "24.0.3"
+    rhbk_p: "24.0.3"
+    rhbk_f: "0"
 
     # These are the tools we need, some also need to be downloaded.
     tools:
@@ -46,6 +46,6 @@ all:
 
     # Whether we will use a standalone RHBK ZIP or not (only used in check-env).
     need_rhbk_zip: yes
-    need_rhbk_patch: yes
-    need_rhbk_hotfix: yes
+    need_rhbk_patch: no
+    need_rhbk_hotfix: no
 ...

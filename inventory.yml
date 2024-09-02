@@ -13,8 +13,8 @@ all:
     ocp_maj: "4.14"
     ocp_z: "4.14.0"
     # Various RHBK versions.
-    rhbk_z: "24.0.3"
-    rhbk_p: "24.0.3"
+    rhbk_z: "24.0.5"
+    rhbk_p: "24.0.5"
     rhbk_f: "0"
 
     # These are the tools we need, some also need to be downloaded.

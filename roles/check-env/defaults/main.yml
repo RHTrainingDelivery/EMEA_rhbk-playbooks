@@ -4,7 +4,7 @@ need_rhbk_zip: yes
 need_rhbk_patch: no
 need_rhbk_hotfix: no
 # These need to default to something, too.
-rhbk_z: "24.0.3"
-rhbk_p: "24.0.3"
+rhbk_z: "24.0.5"
+rhbk_p: "24.0.5"
 rhbk_f: "0"
 ...

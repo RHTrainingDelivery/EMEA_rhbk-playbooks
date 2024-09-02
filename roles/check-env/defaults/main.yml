@@ -1,0 +1,10 @@
+---
+# Provide defaults to simplify conditionals.
+need_rhbk_zip: yes
+need_rhbk_patch: yes
+need_rhbk_hotfix: yes
+# These need to default to something, too.
+rhbk_z: "7.6.0"
+rhbk_p: "7.6.1"
+rhbk_f: "4361"
+...

@@ -1,0 +1,20 @@
+---
+- name: Deploy a RHBK instance
+  hosts: workstation.lab.example.com
+  gather_subset: min
+  become: no
+  roles:
+    - role: deploy-rhbk-operator
+      tags: operator
+    - role: deploy-rhbk-instance
+      tags: keycloak
+    - role: deploy-rhbk-crs
+      tags:
+        - realm
+        - client
+    - role: deploy-rhbk-population
+      tags:
+        - users
+        - groups
+        - roles
+...

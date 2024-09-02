@@ -1,0 +1,9 @@
+---
+- name: Integrate a configured RHBK instance with OCP
+  hosts: workstation.lab.example.com
+  gather_subset: min
+  become: no
+  roles:
+    - role: integrate-rhbk-ocp
+      tags: integrate
+...

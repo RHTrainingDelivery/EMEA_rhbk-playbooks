@@ -1,0 +1,27 @@
+---
+# Adds idm.lab.example.com as alias for workstation, and sso.lab.example.com as
+# alias for utility to /etc/hosts. Must be executed on bastion.lab.example.com
+#
+# Basically there are two line with workstation/utility IPs there...
+#
+#   172.25.250.9    workstation.lab.example.com workstation
+#   172.25.250.253  utility.lab.example.com utility
+#
+# And it must have the above hostnames added, theen dnsmasq restarted.
+- name: Make sure idm is in /etc/hosts
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^172.25.250.9\s+'
+    line: "172.25.250.9    workstation.lab.example.com workstation idm.lab.example.com"
+    state: present
+  notify:
+    - Restart dnsmasq
+- name: Make sure rhbk is in /etc/hosts
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^172.25.250.253\s+'
+    line: "172.25.250.253  utility.lab.example.com utility rhbk.lab.example.com"
+    state: present
+  notify:
+    - Restart dnsmasq
+...

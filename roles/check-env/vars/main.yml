@@ -1,0 +1,11 @@
+---
+# need the following variables somewhere in global vars collection:
+# 
+#  - tools
+#  - clusters
+#  - need_sso_zip
+#  - need_sso_patch
+#  - need_sso_hotfix
+#
+# consult the role tasks file for an explanation
+...

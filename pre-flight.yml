@@ -1,0 +1,19 @@
+---
+- name: Pre-flight checks only.
+  hosts: workstation.lab.example.com
+  gather_subset: min
+  become: no
+  roles:
+    - role: pull-tools
+      tags: prep
+    - role: check-env
+      tags: check
+    - role: fix-operators
+      tags: fix
+- name: Class DNS changes on bastion.
+  hosts: bastion.lab.example.com
+  gather_subset: min
+  roles:
+    - role: add-hosts
+      tags: fix
+...

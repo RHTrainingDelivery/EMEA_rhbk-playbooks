@@ -8,9 +8,9 @@
 # - a client called "sample-client"
 #
 RHBK_HOST_OCP=rhbk.apps.ocp4.example.com:443
-RHBK_HOST_LOC=rhbk.lab.example.com:9443
+RHBK_HOST_LOC=rhbk.lab.example.com:8448
 RHBK_ADMIN_USER=admin
-RHBK_ADMIN_PASS_LOC='jboss#1!'
+RHBK_ADMIN_PASS_LOC='rhbk'
 RHBK_ADMIN_PASS_OCP=''
 
 # Ask about the installation method.
@@ -75,41 +75,41 @@ fi
 echo OK
 
 # Make sure that the realm "sample" exists.
-echo -n " - checking for realm \"sample\"... "
-RSPNS="$(curl -ksf -XGET -H "Authorization: Bearer ${TOKEN}" \
-		-H "Accept: application/json" \
-		https://${RHBK_HOST}/auth/admin/realms/sample)"
-if [ $? -ne 0 ]; then
-    echo "ERROR: Server rejected query."
-    echo
-    echo "Server response was: ${RSPNS}"
-    exit 1
-fi
-if [ -z "$(echo "${RSPNS}" | jq .realm)" ]; then
-    echo "ERROR: Realm \"sample\" not found."
-    echo
-    echo "Make sure realm \"sample\" exists in \"${RHBK_HOST}\" and re-run this script."
-    exit 1
-fi
-echo OK
+# echo -n " - checking for realm \"sample\"... "
+# RSPNS="$(curl -ksf -XGET -H "Authorization: Bearer ${TOKEN}" \
+# 		-H "Accept: application/json" \
+# 		https://${RHBK_HOST}/auth/admin/realms/sample)"
+# if [ $? -ne 0 ]; then
+#     echo "ERROR: Server rejected query."
+#     echo
+#     echo "Server response was: ${RSPNS}"
+#     exit 1
+# fi
+# if [ -z "$(echo "${RSPNS}" | jq .realm)" ]; then
+#     echo "ERROR: Realm \"sample\" not found."
+#     echo
+#     echo "Make sure realm \"sample\" exists in \"${RHBK_HOST}\" and re-run this script."
+#     exit 1
+# fi
+# echo OK
 
-# Make sure that the client "sample-client" exists.
-echo -n " - checking for client \"sample-client\"... "
-RSPNS="$(curl -ksf -XGET -H "Authorization: Bearer ${TOKEN}" \
-		-H "Accept: application/json" \
-		https://${RHBK_HOST}/auth/admin/realms/sample/clients)"
-if [ $? -ne 0 ]; then
-    echo "ERROR: Server rejected query."
-    echo
-    echo "Server response was: ${RSPNS}"
-    exit 1
-fi
-if [ -z "$(echo "${RSPNS}" | jq '.[] | select(.clientId == "sample-client") | .id')" ]; then
-    echo "ERROR: Client \"sample-client\" not found."
-    echo
-    echo "Make sure client \"sample-client\" exists in realm \"sample\" at \"${RHBK_HOST}\" and re-run this script."
-    exit 1
-fi
+# # Make sure that the client "sample-client" exists.
+# echo -n " - checking for client \"sample-client\"... "
+# RSPNS="$(curl -ksf -XGET -H "Authorization: Bearer ${TOKEN}" \
+# 		-H "Accept: application/json" \
+# 		https://${RHBK_HOST}/auth/admin/realms/sample/clients)"
+# if [ $? -ne 0 ]; then
+#     echo "ERROR: Server rejected query."
+#     echo
+#     echo "Server response was: ${RSPNS}"
+#     exit 1
+# fi
+# if [ -z "$(echo "${RSPNS}" | jq '.[] | select(.clientId == "sample-client") | .id')" ]; then
+#     echo "ERROR: Client \"sample-client\" not found."
+#     echo
+#     echo "Make sure client \"sample-client\" exists in realm \"sample\" at \"${RHBK_HOST}\" and re-run this script."
+#     exit 1
+# fi
 echo OK
 
 echo
@@ -123,6 +123,8 @@ cat > ${HOME}/rhbk.conf <<EOF
 export RHBK_HOST="${RHBK_HOST}"
 export RHBK_ADMIN_USER="${RHBK_ADMIN_USER}"
 export RHBK_ADMIN_PASS="${RHBK_ADMIN_PASS}"
+export KEYCLOAK_ADMIN="${RHBK_ADMIN_USER}"
+export KEYCLOAK_ADMIN_PASSWORD="${RHBK_ADMIN_PASS}"
 EOF
 
 echo "Done, your configuration is now stored in ${HOME}/rhbk.conf!"

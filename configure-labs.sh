@@ -8,7 +8,7 @@
 # - a client called "sample-client"
 #
 RHBK_HOST_OCP=rhbk.apps.ocp4.example.com:443
-RHBK_HOST_LOC=rhbk.lab.example.com:8448
+RHBK_HOST_LOC=rhbk.lab.example.com:8444
 RHBK_ADMIN_USER=admin
 RHBK_ADMIN_PASS_LOC='rhbk'
 RHBK_ADMIN_PASS_OCP=''
@@ -57,7 +57,7 @@ echo -n " - obtaining access token for \"admin-cli\"... "
 RSPNS=$(curl -ksf -XPOST -H "Content-Type: application/x-www-form-urlencoded" \
 		-H "Accept: application/json" \
 		-d "client_id=admin-cli&grant_type=password&username=${RHBK_ADMIN_USER}&password=${RHBK_ADMIN_PASS}" \
-		https://${RHBK_HOST}/auth/realms/master/protocol/openid-connect/token)
+		https://${RHBK_HOST}/realms/master/protocol/openid-connect/token)
 if [ $? -ne 0 ]; then
     echo "ERROR: Could not authenticate against \"master\" realm as user \"${RHBK_ADMIN_USER}\"."
     echo

@@ -96,6 +96,52 @@
     - rhbk_cr.resources is defined
     - (rhbk_cr.resources | length) > 0
 
+- name: Create database secret
+  k8s:
+    state: present
+    kubeconfig: tmp/kubeconfig-ocp4
+    validate_certs: no
+    resource_definition:
+      apiVersion: v1
+      data:
+        password: cmhia2RicGFzc3dvcmQ=
+        username: cmhia2RidXNlcg==
+      kind: Secret
+      metadata:
+        name: rhbk-db-secret
+        namespace: rhbk
+      type: Opaque
+
+- name: Create RHBK Self Signed Certificate
+  command: >-
+    openssl req -subj '/CN=rhbk-rhbk.apps.ocp4.example.com/O=Red Hat Build of Keycloak./C=US' -addext "subjectAltName = DNS:rhbk-rhbk.apps.ocp4.example.com" -newkey rsa:2048 -nodes -keyout /home/student/rhbk-key.pem -x509 -days 365 -out /home/student/rhbk-cert.pem
+
+- name: Remove TLS secret
+  k8s:
+    state: absent
+    kubeconfig: tmp/kubeconfig-ocp4
+    validate_certs: no
+    api_version: v1
+    kind: secret
+    namespace: rhbk
+    name: rhbk-tls-secret
+
+- name: Create TLS secret
+  k8s:
+    state: present
+    kubeconfig: tmp/kubeconfig-ocp4
+    validate_certs: no
+    resource_definition:
+      apiVersion: v1
+      data:
+        tls.crt: "{{ lookup('file', '/home/student/rhbk-cert.pem') | b64encode }}"
+        tls.key: "{{ lookup('file', '/home/student/rhbk-key.pem') | b64encode }}"
+      kind: Secret
+      metadata:
+        name: rhbk-tls-secret
+        namespace: rhbk
+      type: kubernetes.io/tls
+    
 - name: Make sure there is a KeyCloak resource in the project
   k8s:
     kubeconfig: tmp/kubeconfig-ocp4
@@ -139,8 +185,7 @@
   until:
     - (rhbk_cr.resources | length) == 1
     - rhbk_cr.resources[0].status is defined
-    - rhbk_cr.resources[0].status.ready
-    - rhbk_cr.resources[0].status.phase == "reconciling"
+    - rhbk_cr.resources[0].status | json_query('conditions[?type==`Ready` && status==`True`].status')
   retries: 30
   delay: 10
 

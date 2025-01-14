@@ -7,7 +7,7 @@
 # - a realm called "sample"
 # - a client called "sample-client"
 #
-RHBK_HOST_OCP=rhbk-rhbk.apps.ocp4.example.com:443
+RHBK_HOST_OCP=rhbk-rhbk.apps.ocp4.example.com
 RHBK_HOST_LOC=rhbk.lab.example.com:9443
 RHBK_ADMIN_USER=admin
 RHBK_ADMIN_PASS_LOC='jboss#1!'
@@ -35,7 +35,7 @@ echo
 # If the installation method is OCP, try obtaining admin user's password.
 if [ ${REPLY} -eq 2 ]; then
     echo -n " - attempting to obtain password for user \"admin\"... "
-    oc login -u admin -p redhat https://api.ocp4.example.com:6443/ >/dev/null 2>&1
+    oc login -u admin -p redhatocp https://api.ocp4.example.com:6443/ >/dev/null 2>&1
     if [ $? -ne 0 ]; then
 	echo "ERROR: could not log into OpenShift."
 	echo

@@ -19,6 +19,64 @@
     fail_msg: "ERROR: RHBK operator not deployed or not registered correctly."
     success_msg: "OK: RHBK operator deployed correctly."
 
+- name: Deploy PostgreSQL 16 server
+  k8s:
+    kubeconfig: tmp/kubeconfig-ocp4
+    validate_certs: no
+    api_version: apps/v1
+    kind: statefulset
+    namespace: rhbk
+    name: rhbk-db
+    definition:
+      spec:
+        serviceName: rhbk-db-service
+        selector:
+          matchLabels:
+            app: rhbk-db
+        replicas: 1
+        template:
+          metadata:
+            labels:
+              app: rhbk-db
+          spec:
+            containers:
+              - name: rhbk-db
+                image: quay.io/aletiasolucionesit/postgresql-16
+                volumeMounts:
+                  - mountPath: /var/lib/pgsql/data
+                    name: db-data-volume
+                env:
+                  - name: POSTGRESQL_PASSWORD
+                    value: rhbkdbpassword
+                  - name: POSTGRESQL_USER
+                    value: rhbkdbuser
+                  - name: POSTGRESQL_DATABASE
+                    value: rhbk
+        volumeClaimTemplates:
+          - metadata:
+              name: db-data-volume
+            spec:
+              accessModes: [ "ReadWriteOnce" ]
+              resources:
+                requests:
+                  storage: 5Gi
+
+- name: Deploy PostgreSQL 16 service
+  k8s:
+    kubeconfig: tmp/kubeconfig-ocp4
+    validate_certs: no
+    api_version: v1
+    kind: service
+    namespace: rhbk
+    name: rhbk-db
+    definition:
+      spec:
+        selector:
+          app: rhbk-db
+        ports:
+        - port: 5432
+          targetPort: 5432
+
 - name: Check for the presence of stray KeyCloak resources
   k8s_info:
     kubeconfig: tmp/kubeconfig-ocp4
@@ -33,7 +91,7 @@
       - (rhbk_cr.resources | length) == 1
       - rhbk_cr.resources[0].metadata.name == "rhbk"
     fail_msg: "ERROR: RHBK instances other than the required one exist."
-    success_msg: "OK: Required RHSSO instance exists."
+    success_msg: "OK: Required RHBK instance exists."
   when:
     - rhbk_cr.resources is defined
     - (rhbk_cr.resources | length) > 0

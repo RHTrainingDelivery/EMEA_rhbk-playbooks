@@ -8,13 +8,3 @@
       tags: operator
     - role: deploy-rhbk-instance
       tags: keycloak
-    - role: deploy-rhbk-crs
-      tags:
-        - realm
-        - client
-    - role: deploy-rhbk-population
-      tags:
-        - users
-        - groups
-        - roles
-...

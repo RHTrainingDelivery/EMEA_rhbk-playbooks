@@ -56,17 +56,6 @@
   retries: 30
   delay: 10
 
-
-- name: Get info about the rhbk-operator
-  k8s_info:
-    kubeconfig: tmp/kubeconfig-ocp4
-    validate_certs: no
-    api_version: packages.operators.coreos.com/v1
-    kind: packagemanifest
-    namespace: openshift-marketplace
-    name: rhbk-operator
-  register: rhbk_mft
-
 - name: Ensure the RHBK catalog source is there as well
   k8s:
     kubeconfig: tmp/kubeconfig-ocp4
@@ -74,11 +63,11 @@
     api_version: operators.coreos.com/v1alpha1
     kind: catalogsource
     namespace: openshift-marketplace
-    name: do280-rhbk
+    name: rh-ws-catalog
     state: present
     definition:
       spec:
-        displayName: "do280 RHBK Catalog"
+        displayName: "Red Hat WorkShops Catalog"
         image: "{{ catalog_rhbk_image }}"
         publisher: "Red Hat"
         sourceType: "grpc"
@@ -90,7 +79,7 @@
     api_version: operators.coreos.com/v1alpha1
     kind: catalogsource
     namespace: openshift-marketplace
-    name: do280-rhbk
+    name: rh-ws-catalog
   register: rhbk_cat
   until:
     - (rhbk_cat.resources | length) == 1
@@ -110,7 +99,7 @@
   register: rhbk_mft
   until:
     - (rhbk_mft.resources | length) == 1
-    - rhbk_mft.resources[0].status.catalogSource == "do280-rhbk"
+    - rhbk_mft.resources[0].status.catalogSource == "rh-ws-catalog"
     - rhbk_mft.resources[0].status.packageName == "rhbk-operator"
   retries: 30
   delay: 10
@@ -119,8 +108,8 @@
     that:
       - rhbk_mft.resources is defined
       - (rhbk_mft.resources | length) > 0
-      - rhbk_mft.resources[0].status.catalogSource == "do280-rhbk"
-      - '"rhbk-operator.v24.0.5-opr.1" in (rhbk_mft.resources[0] | community.general.json_query("status.channels[*].currentCSV") | list)'
+      - rhbk_mft.resources[0].status.catalogSource == "rh-ws-catalog"
+      - '"rhbk-operator.v26.0.7-opr.1" in (rhbk_mft.resources[0] | community.general.json_query("status.channels[*].currentCSV") | list)'
     fail_msg: "ERROR: rhbk-operator package manifest not deployed correctly."
     success_msg: "OK: rhbk-operator package manifest configured correctly."
 ...

@@ -7,10 +7,10 @@
 # - a realm called "sample"
 # - a client called "sample-client"
 #
-RHBK_HOST_OCP=rhbk.apps.ocp4.example.com:443
-RHBK_HOST_LOC=rhbk.lab.example.com:8444
+RHBK_HOST_OCP=rhbk-rhbk.apps.ocp4.example.com:443
+RHBK_HOST_LOC=rhbk.lab.example.com:9443
 RHBK_ADMIN_USER=admin
-RHBK_ADMIN_PASS_LOC='rhbk'
+RHBK_ADMIN_PASS_LOC='jboss#1!'
 RHBK_ADMIN_PASS_OCP=''
 
 # Ask about the installation method.
@@ -42,11 +42,18 @@ if [ ${REPLY} -eq 2 ]; then
 	echo "Please make sure OCP cluster is in ready state by issuing \"ssh lab@utility ./wait.sh\", then re-run this script."
 	exit 1
     fi
-    RHBK_ADMIN_PASS="$(oc -n rhsso extract secrets/credential-rhsso --keys=ADMIN_PASSWORD --to=- 2>/dev/null)"
+    RHBK_ADMIN_USER="$(oc -n rhbk extract secrets/rhbk-initial-admin --keys=username --to=- 2>/dev/null)"
     if [ $? -ne 0 ]; then
-	echo "ERROR: could not extract RHSSO admin password."
+	echo "ERROR: could not extract RHBK admin username."
 	echo
-	echo "Please make sure a Keycloak resource exists in project \"rhsso\" and its deployment was successful, then re-run this script."
+	echo "Please make sure a Keycloak resource exists in project \"rhbk\" and its deployment was successful, then re-run this script."
+	exit 1
+    fi
+    RHBK_ADMIN_PASS="$(oc -n rhbk extract secrets/rhbk-initial-admin --keys=password --to=- 2>/dev/null)"
+    if [ $? -ne 0 ]; then
+	echo "ERROR: could not extract RHBK admin password."
+	echo
+	echo "Please make sure a Keycloak resource exists in project \"rhbk\" and its deployment was successful, then re-run this script."
 	exit 1
     fi
     echo OK
@@ -74,44 +81,6 @@ if [ $? -ne 0 ] || [ -z "${TOKEN}" ]; then
 fi
 echo OK
 
-# Make sure that the realm "sample" exists.
-# echo -n " - checking for realm \"sample\"... "
-# RSPNS="$(curl -ksf -XGET -H "Authorization: Bearer ${TOKEN}" \
-# 		-H "Accept: application/json" \
-# 		https://${RHBK_HOST}/auth/admin/realms/sample)"
-# if [ $? -ne 0 ]; then
-#     echo "ERROR: Server rejected query."
-#     echo
-#     echo "Server response was: ${RSPNS}"
-#     exit 1
-# fi
-# if [ -z "$(echo "${RSPNS}" | jq .realm)" ]; then
-#     echo "ERROR: Realm \"sample\" not found."
-#     echo
-#     echo "Make sure realm \"sample\" exists in \"${RHBK_HOST}\" and re-run this script."
-#     exit 1
-# fi
-# echo OK
-
-# # Make sure that the client "sample-client" exists.
-# echo -n " - checking for client \"sample-client\"... "
-# RSPNS="$(curl -ksf -XGET -H "Authorization: Bearer ${TOKEN}" \
-# 		-H "Accept: application/json" \
-# 		https://${RHBK_HOST}/auth/admin/realms/sample/clients)"
-# if [ $? -ne 0 ]; then
-#     echo "ERROR: Server rejected query."
-#     echo
-#     echo "Server response was: ${RSPNS}"
-#     exit 1
-# fi
-# if [ -z "$(echo "${RSPNS}" | jq '.[] | select(.clientId == "sample-client") | .id')" ]; then
-#     echo "ERROR: Client \"sample-client\" not found."
-#     echo
-#     echo "Make sure client \"sample-client\" exists in realm \"sample\" at \"${RHBK_HOST}\" and re-run this script."
-#     exit 1
-# fi
-echo OK
-
 echo
 echo "Proceeding with these settings:"
 echo " - RHBK_HOST       = ${RHBK_HOST}"
@@ -123,8 +92,6 @@ cat > ${HOME}/rhbk.conf <<EOF
 export RHBK_HOST="${RHBK_HOST}"
 export RHBK_ADMIN_USER="${RHBK_ADMIN_USER}"
 export RHBK_ADMIN_PASS="${RHBK_ADMIN_PASS}"
-export KEYCLOAK_ADMIN="${RHBK_ADMIN_USER}"
-export KEYCLOAK_ADMIN_PASSWORD="${RHBK_ADMIN_PASS}"
 EOF
 
 echo "Done, your configuration is now stored in ${HOME}/rhbk.conf!"

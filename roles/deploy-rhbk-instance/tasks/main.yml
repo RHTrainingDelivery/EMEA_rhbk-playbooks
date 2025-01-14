@@ -1,5 +1,4 @@
 ---
-## TODO: Refactor for RHBK
 # Ensures the RHSSO instance (driven by a KeyCloak resource) is there.
 #
 - name: Check that the CSV is there and completed
@@ -8,68 +7,82 @@
     validate_certs: no
     api_version: operators.coreos.com/v1alpha1
     kind: clusterserviceversion
-    namespace: rhsso
-    name: rhsso-operator.7.6.0-opr-003
-  register: sso_csv
+    namespace: rhbk
+    name: rhbk-operator.v26.0.7-opr.1
+  register: rhbk_csv
 
 - assert:
     that:
-      - sso_csv.resources is defined
-      - (sso_csv.resources | length) == 1
-      - sso_csv.resources[0].status.phase == "Succeeded"
-    fail_msg: "ERROR: RHSSO operator not deployed or not registered correctly."
-    success_msg: "OK: RHSSO operator deployed correctly."
+      - rhbk_csv.resources is defined
+      - (rhbk_csv.resources | length) == 1
+      - rhbk_csv.resources[0].status.phase == "Succeeded"
+    fail_msg: "ERROR: RHBK operator not deployed or not registered correctly."
+    success_msg: "OK: RHBK operator deployed correctly."
 
 - name: Check for the presence of stray KeyCloak resources
   k8s_info:
     kubeconfig: tmp/kubeconfig-ocp4
     validate_certs: no
-    api_version: keycloak.org/v1alpha1
+    api_version: k8skeycloak.org/v2alpha1
     kind: keycloak
-    namespace: rhsso
-  register: sso_cr
+    namespace: rhbk
+  register: rhbk_cr
 
 - assert:
     that:
-      - (sso_cr.resources | length) == 1
-      - sso_cr.resources[0].metadata.name == "rhsso"
-    fail_msg: "ERROR: RHSSO instances other than the required one exist."
+      - (rhbk_cr.resources | length) == 1
+      - rhbk_cr.resources[0].metadata.name == "rhbk"
+    fail_msg: "ERROR: RHBK instances other than the required one exist."
     success_msg: "OK: Required RHSSO instance exists."
   when:
-    - sso_cr.resources is defined
-    - (sso_cr.resources | length) > 0
+    - rhbk_cr.resources is defined
+    - (rhbk_cr.resources | length) > 0
 
 - name: Make sure there is a KeyCloak resource in the project
   k8s:
     kubeconfig: tmp/kubeconfig-ocp4
     validate_certs: no
-    api_version: keycloak.org/v1alpha1
+    api_version: k8s.keycloak.org/v2alpha1
     kind: keycloak
-    namespace: rhsso
-    name: rhsso
+    namespace: rhbk
+    name: rhbk
     definition:
       metadata:
         labels:
-          app: sso
+          app: rhbk
       spec:
+        db:
+          database: rhbk
+          host: rhbk-db
+          passwordSecret:
+            key: password
+            name: rhbk-db-secret
+          port: 5432
+          usernameSecret:
+            key: username
+            name: rhbk-db-secret
+          vendor: postgres
+        hostname:
+          hostname: rhbk-rhbk.apps.ocp4.example.com
+        http:
+          httpEnabled: false
+          tlsSecret: rhbk-tls-secret
         instances: 1
-        externalAccess:
-          enabled: true
 
 - name: Wait for the KeyCloak resource to show ready state
   k8s_info:
     kubeconfig: tmp/kubeconfig-ocp4
     validate_certs: no
-    api_version: keycloak.org/v1alpha1
+    api_version: k8s.keycloak.org/v2alpha1
     kind: keycloak
-    namespace: rhsso
-    name: rhsso
-  register: sso_cr
+    namespace: rhbk
+    name: rhbk
+  register: rhbk_cr
   until:
-    - (sso_cr.resources | length) == 1
-    - sso_cr.resources[0].status is defined
-    - sso_cr.resources[0].status.ready
-    - sso_cr.resources[0].status.phase == "reconciling"
+    - (rhbk_cr.resources | length) == 1
+    - rhbk_cr.resources[0].status is defined
+    - rhbk_cr.resources[0].status.ready
+    - rhbk_cr.resources[0].status.phase == "reconciling"
   retries: 30
   delay: 10
 
@@ -77,8 +90,8 @@
   pause:
     prompt: |-
       *******************************************************************************************************
-      KeyCloak instance rhsso is now available at {{ sso_cr.resources[0].status.externalURL }}
-      You can obtain the necessary credentials from secrets/{{ sso_cr.resources[0].status.credentialSecret }}
+      KeyCloak instance rhbk is now available. You can run `oc get routes -o yaml -o jsonpath='https://{.items[0].status.ingress[0].host}' -n rhbk ` 
+      You can obtain the necessary credentials from `oc extract secret/rhbk-initial-admin --to=-`
       *******************************************************************************************************
     seconds: 5
 ...

@@ -3,15 +3,17 @@
   hosts: workstation.lab.example.com
   gather_subset: min
   become: no
+  pre_tasks:
+    - name: Install community.general collection
+      command: ansible-galaxy collection install community.general
+      changed_when: True
   roles:
-    #- role: pull-tools
-    #  tags: prep
     - role: check-env
       tags: check
     - role: fix-operators
       tags: fix
 - name: Class DNS changes on bastion.
-  hosts: bastion1.example.com
+  hosts: bastion.lab.example.com
   gather_subset: min
   roles:
     - role: add-hosts

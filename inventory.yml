@@ -6,21 +6,17 @@ all:
       ansible_connection: local
     utility.lab.example.com:
       ansible_user: lab
-    bastion.lab.example.com:
+    bastion.example.com:
       ansible_user: root
   vars:
     # OpenShift versions.
-    ocp_maj: "4.10"
-    ocp_z: "4.10.3"
-    # Various RHSSO versions.
-    sso_z: "7.6.0"
-    sso_p: "7.6.1"
-    sso_f: "4361"
+    ocp_maj: "4.14"
+    ocp_z: "4.14.0"
 
     # These are the tools we need, some also need to be downloaded.
     tools:
       oc:
-        final_name: /usr/bin/oc
+        final_name: /usr/local/bin/oc
         completion: yes
         completion_file: oc
 
@@ -43,9 +39,3 @@ all:
     # The list of OpenShift clusters check-env will try to connect to.
     clusters:
       - ocp4
-
-    # Whether we will use a standalone RHSSO ZIP or not (only used in check-env).
-    need_sso_zip: yes
-    need_sso_patch: yes
-    need_sso_hotfix: yes
-...

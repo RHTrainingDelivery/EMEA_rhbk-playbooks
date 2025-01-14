@@ -5,7 +5,7 @@
   become: no
   pre_tasks:
     - name: Install community.general collection
-      command: ansible-galaxy collection install community.general
+      command: ansible-galaxy collection install community.general:9.5.3
       changed_when: True
   roles:
     - role: check-env
@@ -13,7 +13,7 @@
     - role: fix-operators
       tags: fix
 - name: Class DNS changes on bastion.
-  hosts: bastion.lab.example.com
+  hosts: bastion.example.com
   gather_subset: min
   roles:
     - role: add-hosts

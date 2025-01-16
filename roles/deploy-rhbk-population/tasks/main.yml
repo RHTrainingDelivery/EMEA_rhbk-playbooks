@@ -74,58 +74,19 @@
       Content-Type: application/json
     body_format: json
     body: >-
-      {"realm": "sample", "enabled": true}
+      {"realm": "demo", "enabled": true}
     status_code:
       - 200
       - 201
       - 204
 
-- name: Get existing group list
-  uri:
-    method: GET
-    return_content: true
-    validate_certs: false
-    url: "{{ rhbk_url }}/admin/realms/sample/groups"
-    headers:
-      Authorization: Bearer {{ rhbk_token }}
-      Accept: application/json
-  register: rhbk_groups_raw
-  tags:
-    - groups
-
-- name: Store existing groups as a list
-  set_fact:
-    rhbk_groups: "{{ rhbk_groups_raw.json | items2dict(key_name='name', value_name='id') }}"
-  tags:
-    - groups
-
-- name: Create missing groups
-  uri:
-    method: POST
-    return_content: true
-    validate_certs: false
-    url: "{{ rhbk_url }}/admin/realms/sample/groups"
-    headers:
-      Authorization: Bearer {{ rhbk_token }}
-      Accept: application/json
-      Content-Type: application/json
-    body_format: json
-    body: '{"name": "{{ item | string }}"}'
-    status_code:
-      - 200
-      - 201
-      - 204
-  loop: "{{ pop_groups }}"
-  when: item not in rhbk_groups.keys()
-  tags:
-    - groups
 # You need offline_access in realmRoles to be able to use OCP OIDC.
 - name: Make sure KeycloakUser resources exist
   uri:
     method: POST
     return_content: true
     validate_certs: false
-    url: "{{ rhbk_url }}/admin/realms/sample/groups"
+    url: "{{ rhbk_url }}/admin/realms/demo/users"
     headers:
       Authorization: Bearer {{ rhbk_token }}
       Accept: application/json

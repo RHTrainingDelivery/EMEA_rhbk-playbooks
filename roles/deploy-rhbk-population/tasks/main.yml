@@ -68,11 +68,15 @@
     method: GET
     headers:
       Authorization: "Bearer {{ rhbk_token }}"
-  register: existing_realms_response
+  register: realm_check_response
+  failed_when: realm_check_response.status not in [200, 404]
+  ignore_errors: true
 
 # Back to business as usual from here on.
 - name: Create demo realm
-  when: existing_realms_response.json | length == 0
+  when: realm_check_response.status == 404
+  register: create_realm_response
+  failed_when: create_realm_response.status != 201
   uri:
     method: POST
     return_content: true

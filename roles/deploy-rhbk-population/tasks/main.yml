@@ -62,7 +62,7 @@
     rhbk_token: "{{ rhbk_token_rsp.json.access_token }}"
 
 # Back to business as usual from here on.
-- name: Create sample realm
+- name: Create demo realm
   uri:
     method: POST
     return_content: true
@@ -97,3 +97,27 @@
   loop: "{{ pop_users }}"
   tags:
     - users
+
+- name: Assign realm-admin role to admin users
+  when: item.isadmin | bool
+  uri:
+    url: "{{ rhbk_url }}/admin/realms/demo/users/{{ item.username }}/role-mappings/realm"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ rhbk_token }}"
+      Content-Type: "application/json"
+    body: >
+      [
+        {
+          "name": "realm-admin"
+        }
+      ]
+    body_format: json
+  loop: "{{ pop_users }}"
+  loop_control:
+    label: "{{ item.username }}"
+  register: assign_roles_responses
+  failed_when: assign_roles_responses.failed
+  tags:
+    - users
+

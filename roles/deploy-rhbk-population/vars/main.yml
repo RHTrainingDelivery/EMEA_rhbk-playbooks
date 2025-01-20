@@ -5,7 +5,9 @@ pop_users:
     password: redhat123
     firstname: Admin
     lastname: Demo
+    isadmin: true
   - username: userdemo
     password: redhat123
     firstname: User
     lastname: Demo
+    isadmin: false

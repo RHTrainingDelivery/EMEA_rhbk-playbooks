@@ -11,3 +11,6 @@ pop_users:
     firstname: User
     lastname: Demo
     isadmin: false
+
+oidc_client_id: openid-demo-client
+valid_redirect_uris: "http://secureapi.apps.ocp4.example.com/api/*"

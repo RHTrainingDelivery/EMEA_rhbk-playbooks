@@ -121,3 +121,32 @@
   tags:
     - users
 
+- name: Check if OIDC client already exists
+  uri:
+    url: "{{ rhbk_url }}/admin/realms/demo/clients?clientId={{ oidc_client_id }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ rhbk_token }}"
+    register: existing_clients_response
+
+- name: Create OIDC client if it does not exist
+  when: existing_clients_response.json | length == 0
+  uri:
+    url: "{{ rhbk_url }}/admin/realms/demo/clients"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ rhbk_token }}"
+      Content-Type: "application/json"
+    body: >
+      {
+        "clientId": "{{ oidc_client_id }}",
+        "protocol": "openid-connect",
+        "enabled": true,
+        "publicClient": false,
+        "authorizationServicesEnabled": true,
+        "redirectUris": ["{{ valid_redirect_uris }}"]
+      }
+    body_format: json
+  register: create_client_response
+  failed_when: create_client_response.status != 201
+  no_log: true

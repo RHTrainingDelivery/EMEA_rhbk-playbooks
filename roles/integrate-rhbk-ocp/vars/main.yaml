@@ -1,0 +1,16 @@
+# OpenShift Identity Provider Configuration
+openshift_provider_config:
+  providerId: "openshift-v4"
+  alias: "openshift-v4"
+  config:
+    clientId: "ocp4-broker"
+    clientSecret: "redhat123"
+    baseUrl: "https://api.ocp4.example.com:6443"
+
+# OpenShift OAuthClient Configuration
+openshift_oauth_config:
+  name: "ocp4-broker"
+  secret: "redhat123"
+  redirectURIs:
+    - "https://rhbk-rhbk.apps.ocp4.example.com/realms/demo/broker/openshift-v4/endpoint"
+  grantMethod: "prompt"

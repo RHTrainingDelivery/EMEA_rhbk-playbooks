@@ -1,0 +1,117 @@
+---
+# Ensures that there are also users, groups, and roles in the test realm.
+- name: Check for the KeyCloak resource
+  k8s_info:
+    kubeconfig: tmp/kubeconfig-ocp4
+    validate_certs: no
+    api_version: k8s.keycloak.org/v2alpha1
+    kind: keycloak
+    namespace: rhbk
+    name: rhbk
+  register: rhbk_cr
+
+- assert:
+    that:
+      - (rhbk_cr.resources | length) == 1
+      - rhbk_cr.resources[0].status is defined
+      - rhbk_cr.resources[0].status | json_query('conditions[?type==`Ready` && status==`True`].status')
+    fail_msg: "ERROR: RHBK instance is missing or not configured correctly."
+    success_msg: "OK: RHBK instance is configured correctly."
+
+- name: Store RHBK URL as a fact
+  set_fact:
+    rhbk_url: "https://rhbk-rhbk.apps.ocp4.example.com"
+
+# Authentication bits from here until we can get group list.
+- name: Read the RHBK admin user and password
+  k8s_info:
+    kubeconfig: tmp/kubeconfig-ocp4
+    validate_certs: no
+    api_version: v1
+    kind: secret
+    namespace: rhbk
+    name: "rhbk-initial-admin"
+  register: rhbk_secret
+
+- name: Store RHBK admin user as fact
+  set_fact:
+    rhbk_admin: "{{ rhbk_secret.resources[0].data.username }}"
+
+- name: Store RHBK admin pass as fact
+  set_fact:
+    rhbk_pass: "{{ rhbk_secret.resources[0].data.password }}"
+
+- name: Get an auth token from RHBK
+  uri:
+    validate_certs: no
+    method: POST
+    return_content: true
+    url: "{{ rhbk_url }}/realms/master/protocol/openid-connect/token"
+    headers:
+      Accept: application/json
+    body: "client_id=admin-cli&username={{ rhbk_admin | string | b64decode }}&password={{ rhbk_pass | string | b64decode }}&grant_type=password"
+  register: rhbk_token_rsp
+
+- assert:
+    that: rhbk_token_rsp.json is defined and rhbk_token_rsp.json.access_token is defined
+    fail_msg: "ERROR: Failed to obtain authentication token from RHBK."
+    success_msg: "OK: got authentication token."
+
+- name: Store the token as a fact
+  set_fact:
+    rhbk_token: "{{ rhbk_token_rsp.json.access_token }}"
+
+- name: Check if identity provider exists in Keycloak
+  uri:
+    validate_certs: no
+    url: "{{ rhbk_url }}/admin/realms/demo/identity-provider/instances/{{ openshift_provider_config.alias }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ rhbk_token }}"
+  register: idp_check_response
+  failed_when: idp_check_response.status not in [200, 404]
+  ignore_errors: true
+
+- name: Create or update identity provider in RHBK
+  uri:
+    validate_certs: no
+    url: "{{ rhbk_url }}/admin/realms/demo/identity-provider/instances"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ rhbk_token }}"
+      Content-Type: "application/json"
+    body: >
+      {
+        "providerId": "{{ openshift_provider_config.providerId }}",
+        "alias": "{{ openshift_provider_config.alias }}",
+        "enabled": true,
+        "updateProfileFirstLoginMode": "on",
+        "trustEmail": true,
+        "storeToken": true,
+        "addReadTokenRoleOnCreate": false,
+        "authenticateByDefault": false,
+        "linkOnly": false,
+        "firstBrokerLoginFlowAlias": "first broker login",
+        "config": {
+          "clientId": "{{ openshift_provider_config.config.clientId }}",
+          "clientSecret": "{{ openshift_provider_config.config.clientSecret }}",
+          "baseUrl": "{{ openshift_provider_config.config.baseUrl }}"
+        }
+      }
+    body_format: json
+  when: idp_check_response.status == 404
+  register: idp_create_response
+  failed_when: idp_create_response.status not in [200, 201]
+
+
+- name: Create OpenShift OAuthClient
+  k8s:
+    kubeconfig: tmp/kubeconfig-ocp4
+    validate_certs: no
+    api_version: oauth.openshift.io/v1
+    kind: oauthclient
+    name: "{{ openshift_oauth_config.name }}"
+    definition:
+      secret: "{{ openshift_oauth_config.secret }}"
+      redirectURIs: "{{ openshift_oauth_config.redirectURIs }}"
+      grantMethod: "{{ openshift_oauth_config.grantMethod }}"

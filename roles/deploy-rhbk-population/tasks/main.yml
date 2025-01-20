@@ -41,7 +41,7 @@
   set_fact:
     rhbk_pass: "{{ rhbk_secret.resources[0].data.password }}"
 
-- name: Get an auth token from RHSSO
+- name: Get an auth token from RHBK
   uri:
     method: POST
     return_content: true
@@ -53,7 +53,7 @@
   register: rhbk_token_rsp
 
 - assert:
-    that: rhbk_token_rsp.json is defined and sso_token_rsp.json.access_token is defined
+    that: rhbk_token_rsp.json is defined and rhbk_token_rsp.json.access_token is defined
     fail_msg: "ERROR: Failed to obtain authentication token from RHBK."
     success_msg: "OK: got authentication token."
 
@@ -61,8 +61,18 @@
   set_fact:
     rhbk_token: "{{ rhbk_token_rsp.json.access_token }}"
 
+- name: Check if demo realm already exists
+  uri:
+    validate_certs: false
+    url: "{{ rhbk_url }}/admin/realms/demo"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ rhbk_token }}"
+  register: existing_realms_response
+
 # Back to business as usual from here on.
 - name: Create demo realm
+  when: existing_realms_response.json | length == 0
   uri:
     method: POST
     return_content: true
@@ -80,6 +90,18 @@
       - 201
       - 204
 
+- name: Check if user exists
+  uri:
+    validate_certs: false
+    url: "{{ rhbk_url }}/admin/realms/demo/users?username={{ item.username }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ rhbk_token }}"
+  loop: "{{ pop_users }}"
+  loop_control:
+    label: "{{ item.username }}"
+  register: user_exists_responses
+
 # You need offline_access in realmRoles to be able to use OCP OIDC.
 - name: Make sure KeycloakUser resources exist
   uri:
@@ -92,16 +114,68 @@
       Accept: application/json
       Content-Type: application/json
     body_format: json
-    body: >-
-      {"firstName": {{ item.firstname }} ,"lastName": {{ item.lastname }} , "username": {{ item.username }},"email": {{ item.username }}"@example.com", "enabled": "true", "credentials":[{"type":"password","value": {{ item.password }},"temporary":false}], "emailVerified": "true", "groups": {{ item.groups | list }}, "realmRoles": ["offline_access"]}
+    body: >
+      {
+        "username": "{{ item.username }}",
+        "enabled": true,
+        "firstName": "{{ item.firstname }}",
+        "lastName": "{{ item.lastname }}",
+        "credentials": [
+          {
+            "type": "password",
+            "value": "{{ item.password }}",
+            "temporary": false
+          }
+        ]
+      }
+    status_code:
+      - 200
+      - 201
+      - 204
   loop: "{{ pop_users }}"
+  when: user_exists_responses.results | selectattr('item.username', 'equalto', item.username) | map(attribute='json') | list | first | length == 0
   tags:
     - users
 
-- name: Assign realm-admin role to admin users
-  when: item.isadmin | bool
+- name: Fetch realm-management client ID
   uri:
-    url: "{{ rhbk_url }}/admin/realms/demo/users/{{ item.username }}/role-mappings/realm"
+    validate_certs: false
+    url: "{{ rhbk_url }}/admin/realms/demo/clients?clientId=realm-management"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ rhbk_token }}"
+  register: realm_management_client_response
+  failed_when: realm_management_client_response.json | length == 0
+
+- name: Fetch realm-admin role ID from realm-management client
+  uri:
+    validate_certs: false
+    url: "{{ rhbk_url }}/admin/realms/demo/clients/{{ realm_management_client_id }}/roles/realm-admin"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ rhbk_token }}"
+  register: realm_admin_role_response
+  vars:
+    realm_management_client_id: "{{ realm_management_client_response.json[0].id }}"
+  failed_when: realm_admin_role_response.status != 200
+
+- name: Fetch user IDs for admin users
+  uri:
+    validate_certs: false
+    url: "{{ rhbk_url }}/admin/realms/demo/users?username={{ item.username }}"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ rhbk_token }}"
+  loop: "{{ pop_users | selectattr('isadmin', 'equalto', true) | list }}"
+  loop_control:
+    label: "{{ item.username }}"
+  register: user_id_responses
+  no_log: true
+
+- name: Assign realm-admin role to admin users
+  uri:
+    validate_certs: false
+    url: "{{ rhbk_url }}/admin/realms/demo/users/{{ user_id }}/role-mappings/clients/{{ realm_management_client_id }}"
     method: POST
     headers:
       Authorization: "Bearer {{ rhbk_token }}"
@@ -109,13 +183,21 @@
     body: >
       [
         {
+          "id": "{{ realm_admin_role_response.json.id }}",
           "name": "realm-admin"
         }
       ]
     body_format: json
-  loop: "{{ pop_users }}"
+    status_code:
+      - 200
+      - 201
+      - 204
+  loop: "{{ user_id_responses.results }}"
   loop_control:
-    label: "{{ item.username }}"
+    label: "{{ item.item.username }}"
+  vars:
+    realm_management_client_id: "{{ realm_management_client_response.json[0].id }}"
+    user_id: "{{ item.json[0].id }}"
   register: assign_roles_responses
   failed_when: assign_roles_responses.failed
   tags:
@@ -123,15 +205,17 @@
 
 - name: Check if OIDC client already exists
   uri:
+    validate_certs: false
     url: "{{ rhbk_url }}/admin/realms/demo/clients?clientId={{ oidc_client_id }}"
     method: GET
     headers:
       Authorization: "Bearer {{ rhbk_token }}"
-    register: existing_clients_response
+  register: existing_clients_response
 
 - name: Create OIDC client if it does not exist
   when: existing_clients_response.json | length == 0
   uri:
+    validate_certs: false
     url: "{{ rhbk_url }}/admin/realms/demo/clients"
     method: POST
     headers:
@@ -144,9 +228,14 @@
         "enabled": true,
         "publicClient": false,
         "authorizationServicesEnabled": true,
+        "serviceAccountsEnabled": true,
         "redirectUris": ["{{ valid_redirect_uris }}"]
       }
     body_format: json
+    status_code:
+      - 200
+      - 201
+      - 204
   register: create_client_response
   failed_when: create_client_response.status != 201
-  no_log: true
+  #no_log: true

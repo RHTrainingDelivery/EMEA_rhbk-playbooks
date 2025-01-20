@@ -13,8 +13,8 @@
 - assert:
     that:
       - (rhbk_cr.resources | length) == 1
-      - rhbk_cr.resources[0].status.ready
-      - rhbk_cr.resources[0].status.phase == "reconciling"
+      - rhbk_cr.resources[0].status is defined
+      - rhbk_cr.resources[0].status | json_query('conditions[?type==`Ready` && status==`True`].status')
     fail_msg: "ERROR: RHBK instance is missing or not configured correctly."
     success_msg: "OK: RHBK instance is configured correctly."
 

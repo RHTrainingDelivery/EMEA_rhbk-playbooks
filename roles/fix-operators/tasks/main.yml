@@ -83,7 +83,7 @@
   register: rhbk_cat
   until:
     - (rhbk_cat.resources | length) == 1
-    - rhbk_cat.resources[0].status is defined
+    - rhbk_cat.resources[0].status.connectionState is defined
     - rhbk_cat.resources[0].status.connectionState.lastObservedState == "READY"
   retries: 30
   delay: 10

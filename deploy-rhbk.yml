@@ -8,3 +8,4 @@
       tags: operator
     - role: deploy-rhbk-instance
       tags: keycloak
+    - role: deploy-rhbk-population

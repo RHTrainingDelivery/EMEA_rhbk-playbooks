@@ -54,6 +54,28 @@
     name: python3.11-jmespath
     state: latest
 
+- name: Remove older Java Versions
+  become: yes
+  package:
+    name: java-*
+    state: absent
+
+- name: Install EPEL Release
+  become: yes
+  package:
+    name: epel-release
+    state: latest
+
+- name: Install Java 21 SDK
+  become: yes
+  package:
+    name: java-latest-openjdk-portable-devel
+    state: latest
+
+- name: Correct java version selected
+  become: yes 
+  command: alternatives --auto java
+
 - name: Verify cluster connectivity
   kubernetes.core.k8s_cluster_info:
     kubeconfig: tmp/kubeconfig-{{ item }}

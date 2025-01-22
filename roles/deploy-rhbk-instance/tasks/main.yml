@@ -116,6 +116,18 @@
   command: >-
     openssl req -subj '/CN=rhbk-rhbk.apps.ocp4.example.com/O=Red Hat Build of Keycloak./C=US' -addext "subjectAltName = DNS:rhbk-rhbk.apps.ocp4.example.com" -newkey rsa:2048 -nodes -keyout /home/student/rhbk-key.pem -x509 -days 365 -out /home/student/rhbk-cert.pem
 
+- name: Copy RHBK Cert to System Trust
+  copy:
+    src: /home/student/rhbk-cert.pem
+    dest: /etc/pki/ca-trust/source/anchors/rhbk-cert.pem
+    remote_src: true
+  become: true
+
+- name: Update System Trust
+  command: >-
+    update-ca-trust
+  become: true
+
 - name: Remove TLS secret
   k8s:
     state: absent

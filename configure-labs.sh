@@ -8,9 +8,9 @@
 # - a client called "sample-client"
 #
 RHBK_HOST_OCP=rhbk-rhbk.apps.ocp4.example.com
-RHBK_HOST_LOC=rhbk.lab.example.com:9443
+RHBK_HOST_LOC=rhbk.lab.example.com:8444
 RHBK_ADMIN_USER=admin
-RHBK_ADMIN_PASS_LOC='jboss#1!'
+RHBK_ADMIN_PASS_LOC='rhbk'
 RHBK_ADMIN_PASS_OCP=''
 
 # Ask about the installation method.

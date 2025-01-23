@@ -8,4 +8,6 @@
 #  - need_sso_hotfix
 #
 # consult the role tasks file for an explanation
+rhbk_n: 26.0.7
+rhbk_p: 24.0.5
 ...

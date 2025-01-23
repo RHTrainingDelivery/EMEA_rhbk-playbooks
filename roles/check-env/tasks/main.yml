@@ -9,18 +9,29 @@
 #   just a simple list of clusters to check
 #
 #
-- name: Check for tools
-  file:
-    path: "{{ tools[item].final_name }}"
-    state: file
-  loop: "{{ tools.keys() | list }}"
+- name: Check RHBK {{ rhbk_n }} ZIP is there
+  stat:
+    path: "{{ ansible_facts['user_dir'] }}/Downloads/rhbk-{{ rhbk_n }}.zip"
+  register: rhbk_new_version
+  when: standalone|bool
 
-- name: Check for completion files
-  file:
-    path: /etc/bash_completion.d/{{ tools[item].completion_file }}
-    state: file
-  when: tools[item].completion
-  loop: "{{ tools.keys() | list }}"
+- assert:
+    that: rhbk_new_version.stat.exists
+    fail_msg: "ERROR: RHBK {{ rhbk_n }} ZIP not downloaded! Please go to section 'Before You Begin' in your book."
+    success_msg: "OK: Found RHBK {{ rhbk_n }} ZIP file."
+  when: standalone|bool
+
+- name: Check RHBK {{ rhbk_p }} is there
+  stat:
+    path: "{{ ansible_facts['user_dir'] }}/Downloads/rhbk-{{ rhbk_p }}-patch.zip"
+  register: rhbk_old_version
+  when: standalone|bool
+
+- assert:
+    that: rhbk_old_version.stat.exists
+    fail_msg: "ERROR: RHBK {{ rhbk_p }} not downloaded! Please go to section 'Before You Begin' in your book."
+    success_msg: "OK: Found RHBK {{ rhbk_p}} file."
+  when: standalone|bool
 
 - name: Make sure kubeconfig is there on utility
   delegate_to: utility.lab.example.com

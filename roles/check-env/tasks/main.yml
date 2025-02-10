@@ -77,11 +77,15 @@
     name: epel-release
     state: latest
 
-- name: Install Java 21 SDK
+- name: Install Java 23 SDK
   become: yes
   package:
-    name: java-latest-openjdk-portable-devel
+    name: "{{ java }}"
     state: latest
+  vars:
+    java:
+      - java-latest-openjdk-devel.x86_64
+      - java-latest-openjdk-headless.x86_64
 
 - name: Correct java version selected
   become: yes 
